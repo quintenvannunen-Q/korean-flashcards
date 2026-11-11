@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Korean Flashcards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f6f4ef; --card:#ffffff; --ink:#1d1f24; --muted:#6b6f78; --line:#e3e0d8;
+    --accent:#3d7a5a; --accent-soft:#e3efe7; --bad:#c2553f; --bad-soft:#f7e4df; --good:#3d7a5a;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#16181c; --card:#22252b; --ink:#eceae4; --muted:#9a9ea7; --line:#33363d;
+      --accent:#6cbf94; --accent-soft:#1f3329; --bad:#e08470; --bad-soft:#3a2420; --good:#6cbf94; }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,"Noto Sans KR",system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
+  .wrap{max-width:560px;margin:0 auto;padding:20px 16px 40px;min-height:100vh;display:flex;flex-direction:column}
+  header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px}
+  h1{font-size:20px;margin:0;font-weight:600}
+  h1 span{font-family:"Noto Sans KR";color:var(--accent);margin-right:6px}
+  .linkbtn{background:none;border:none;color:var(--muted);font:inherit;font-size:14px;cursor:pointer;padding:4px}
+  .linkbtn:hover{color:var(--ink)}
+  /* setup */
+  .section-label{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:18px 0 8px}
+  .decks{display:grid;gap:8px}
+  .deck{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;user-select:none}
+  .deck input{width:18px;height:18px;accent-color:var(--accent);margin:0}
+  .deck .name{flex:1;font-weight:500}
+  .deck .sample{font-family:"Noto Sans KR";color:var(--muted);font-size:14px}
+  .deck .count{font-size:13px;color:var(--muted);min-width:24px;text-align:right}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  .seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;flex:1}
+  .seg button{flex:1;border:none;background:none;padding:9px 8px;border-radius:7px;font:inherit;font-size:14px;color:var(--muted);cursor:pointer}
+  .seg button.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+  .primary{width:100%;margin-top:22px;padding:15px;border:none;border-radius:12px;background:var(--accent);color:#fff;font:inherit;font-size:16px;font-weight:600;cursor:pointer}
+  .primary:disabled{opacity:.4;cursor:default}
+  .quick{display:flex;gap:12px;margin-top:6px}
+  /* study */
+  .progress{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-bottom:8px}
+  .progress div{height:100%;background:var(--accent);width:0;transition:width .25s}
+  .stats{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:14px}
+  .scene{perspective:1200px;flex:1;min-height:300px;max-height:420px;display:flex}
+  .card{position:relative;width:100%;flex:1;transform-style:preserve-3d;transition:transform .45s cubic-bezier(.3,.7,.3,1);cursor:pointer}
+  .card.flipped{transform:rotateY(180deg)}
+  .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:var(--card);border:1px solid var(--line);border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;box-shadow:0 6px 24px rgba(0,0,0,.06)}
+  .back{transform:rotateY(180deg)}
+  .tag{position:absolute;top:14px;left:16px;font-size:12px;color:var(--muted)}
+  .ko{font-family:"Noto Sans KR";font-weight:700;font-size:clamp(44px,13vw,72px);line-height:1.15;word-break:keep-all}
+  .en{font-size:clamp(24px,7vw,34px);font-weight:500;line-height:1.3}
+  .sub{margin-top:14px;font-size:15px;color:var(--muted)}
+  .sub .k{font-family:"Noto Sans KR";font-weight:600;color:var(--ink)}
+  .hint{position:absolute;bottom:14px;font-size:12px;color:var(--muted)}
+  .speak{position:absolute;top:10px;right:10px;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .speak svg{width:18px;height:18px}
+  .answers{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+  .answers button{padding:15px;border-radius:12px;font:inherit;font-size:15px;font-weight:600;cursor:pointer;border:1px solid}
+  .again{background:var(--bad-soft);color:var(--bad);border-color:transparent!important}
+  .got{background:var(--accent-soft);color:var(--good);border-color:transparent!important}
+  .answers.hidden button{visibility:hidden}
+  .flipbtn{grid-column:1/-1;background:var(--card);color:var(--ink);border-color:var(--line)!important}
+  .keys{text-align:center;font-size:12px;color:var(--muted);margin-top:12px}
+  /* type mode */
+  .typebox{margin-top:16px;display:flex;gap:8px}
+  .typebox input{flex:1;padding:14px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:17px;font-family:Inter,"Noto Sans KR"}
+  .typebox input:focus{outline:2px solid var(--accent);border-color:transparent}
+  .typebox button{padding:0 18px;border:none;border-radius:12px;background:var(--accent);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+  .verdict{font-size:15px;font-weight:600;margin-top:12px}
+  .verdict.ok{color:var(--good)} .verdict.no{color:var(--bad)}
+  /* done */
+  .done{text-align:center;padding-top:40px}
+  .done .big{font-size:56px;font-family:"Noto Sans KR";font-weight:700;color:var(--accent)}
+  .done p{color:var(--muted)}
+  .misslist{text-align:left;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px 14px;margin:18px 0}
+  .misslist div{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)}
+  .misslist div:last-child{border:none}
+  .misslist .k{font-family:"Noto Sans KR";font-weight:600}
+  .secondary{width:100%;margin-top:10px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);font:inherit;font-size:15px;cursor:pointer}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1><span>한글</span>Flashcards</h1>
+    <button class="linkbtn" id="homeBtn" hidden>← Decks</button>
+  </header>
+
+  <!-- SETUP -->
+  <section id="setup">
+    <div class="section-label">Decks</div>
+    <div class="quick">
+      <button class="linkbtn" id="allBtn">Select all</button>
+      <button class="linkbtn" id="noneBtn">Clear</button>
+    </div>
+    <div class="decks" id="decks"></div>
+
+    <div class="section-label">Show first</div>
+    <div class="seg" id="dirSeg">
+      <button data-v="ko" class="on">Korean</button>
+      <button data-v="en">English</button>
+      <button data-v="mix">Mixed</button>
+    </div>
+
+    <div class="section-label">Mode</div>
+    <div class="seg" id="modeSeg">
+      <button data-v="flip" class="on">Flip cards</button>
+      <button data-v="type">Type answer</button>
+    </div>
+
+    <button class="primary" id="startBtn">Start</button>
+  </section>
+
+  <!-- STUDY -->
+  <section id="study" hidden style="flex:1;display:flex;flex-direction:column">
+    <div class="progress"><div id="bar"></div></div>
+    <div class="stats"><span id="left"></span><span id="score"></span></div>
+    <div class="scene">
+      <div class="card" id="card">
+        <div class="face front">
+          <span class="tag" id="frontTag"></span>
+          <button class="speak" id="speakF" title="Pronounce" aria-label="Pronounce"></button>
+          <div id="frontText"></div>
+          <span class="hint" id="frontHint">tap to flip</span>
+        </div>
+        <div class="face back">
+          <span class="tag" id="backTag"></span>
+          <button class="speak" id="speakB" title="Pronounce" aria-label="Pronounce"></button>
+          <div id="backText"></div>
+          <div class="sub" id="backSub"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="flipControls">
+      <div class="answers hidden" id="answers">
+        <button class="again" id="againBtn">Again</button>
+        <button class="got" id="gotBtn">Got it</button>
+      </div>
+      <div class="keys">Space = flip · ← again · → got it</div>
+    </div>
+
+    <div id="typeControls" hidden>
+      <form class="typebox" id="typeForm" autocomplete="off">
+        <input id="typeInput" placeholder="Type the answer…" autocapitalize="off" spellcheck="false">
+        <button type="submit" id="checkBtn">Check</button>
+      </form>
+      <div class="verdict" id="verdict"></div>
+      <div class="answers hidden" id="typeNext" style="grid-template-columns:1fr 1fr">
+        <button class="again" id="tAgain">Count as wrong</button>
+        <button class="got" id="tGot">Count as right</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- DONE -->
+  <section id="done" class="done" hidden>
+    <div class="big">잘했어요!</div>
+    <p id="doneText"></p>
+    <div class="misslist" id="missList" hidden></div>
+    <button class="primary" id="missBtn" hidden>Practice the missed words</button>
+    <button class="secondary" id="restartBtn">Same decks again</button>
+    <button class="secondary" id="backBtn">Choose decks</button>
+  </section>
+</div>
+
+<script>
+const DECKS = [
+ {id:"v1", name:"Vowels 1", words:[["오","five"],["이","tooth"],["아우","younger sibling"],["아이","kid"],["오이","cucumber"]]},
+ {id:"c1", name:"Consonants 1", words:[["가수","singer"],["고기","meat"],["구두","shoes"],["나라","country"],["나무","tree"],["다리","legs"],["라디오","radio"],["머리","head"],["바나나","banana"],["바지","pants"],["소","cow"],["아기","baby"],["어머니","mother"],["지도","map"],["모자","hat"],["아버지","father"],["허리","waist"],["지하","underground"]]},
+ {id:"v2", name:"Vowels 2 (ㅑ ㅕ ㅛ ㅠ)", words:[["야구","baseball"],["야자수","palm tree"],["이야기","talk"],["여자","woman"],["벼","rice (plant)"],["혀","tongue"],["요가","yoga"],["요리","cooking"],["교수","professor"],["유리","glass"],["휴지","toilet paper"],["우유","milk"]]},
+ {id:"c2", name:"Aspirated consonants", words:[["카드","card"],["코","nose"],["키","height"],["타조","ostrich"],["토마토","tomato"],["투우사","bullfighter"],["파리","fly"],["포도","grape"],["우표","stamp"],["차","tea"],["치마","skirt"],["고추","pepper"],["커피","coffee"],["코트","coat"],["기차표","train ticket"]]},
+ {id:"c3", name:"Tense consonants", words:[["까치","magpie"],["꼬리","tail"],["코끼리","elephant"],["따다","to pick"],["뜨다","to float"],["머리띠","hairband"],["뿌리","root"],["뼈","bone"],["아빠","dad"],["싸다","to be cheap"],["쓰다","to write"],["아저씨","middle-aged man"],["짜다","to be salty"],["찌다","to steam"],["가짜","fake"]]},
+ {id:"v3", name:"Compound vowels 1", words:[["개미","ant"],["배","ship"],["새","bird"],["해","sun"],["게","crab"],["세수","washing one's face"],["그네","swing"],["카메라","camera"],["얘기","talk"],["예쁘다","to be pretty"],["서예","calligraphy"],["시계","clock"],["과자","snack food"],["와이셔츠","dress shirt"],["화가","painter"],["사과","apple"],["뭐","what"],["줘요","to give"],["더워요","to be hot"],["추워요","to be cold"]]},
+ {id:"v4", name:"Compound vowels 2", words:[["돼지","pig"],["왜","why"],["웨이터","waiter"],["스웨터","sweater"],["쇠고기","beef"],["외우다","to memorize"],["회사","company"],["두뇌","brain"],["귀","ear"],["쉬다","to rest"],["쥐","mouse"],["가위","scissors"],["의사","doctor"],["의자","chair"],["여의도","Yeoui Island"],["회의","meeting"]]},
+ {id:"f1", name:"Final consonants 1", words:[["수박","watermelon"],["책","book"],["부엌","kitchen"],["밖","outside"],["돈","money"],["레몬","lemon"],["신문","newspaper"],["우산","umbrella"],["곧","soon"],["밑","bottom"],["빗","comb"],["옷","clothes"],["낮","daytime"],["꽃","flower"],["빛","light"],["히읗","Hieut (the letter ㅎ)"]]},
+ {id:"f2", name:"Final consonants 2", words:[["딸기","strawberry"],["물","water"],["발","foot"],["연필","pencil"],["곰","bear"],["남자","man"],["엄마","mom"],["컴퓨터","computer"],["밥","steamed rice"],["입","mouth"],["무릎","knee"],["숲","forest"],["가방","bag"],["공","ball"],["냉장고","refrigerator"],["창문","window"]]},
+ {id:"n1", name:"Countries & nationalities", words:[["독일","Germany"],["독일 사람","German (person)"],["미국","America"],["미국 사람","American (person)"],["영국","Britain"],["영국 사람","British (person)"],["일본","Japan"],["일본 사람","Japanese (person)"],["중국","China"],["중국 사람","Chinese (person)"],["프랑스","France"],["프랑스 사람","French (person)"],["한국","Korea"],["한국 사람","Korean (person)"],["호주","Australia"],["호주 사람","Australian (person)"]]},
+ {id:"j1", name:"Jobs", words:[["가수","singer"],["군인","military personnel"],["기자","reporter"],["선생님","teacher"],["요리사","cook"],["의사","doctor"],["학생","student"],["회사원","company employee"]]}
+];
+
+const SPEAKER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>';
+
+const store = {
+  get(k,d){ try{ const v=localStorage.getItem("kfc_"+k); return v?JSON.parse(v):d; }catch(e){ return d; } },
+  set(k,v){ try{ localStorage.setItem("kfc_"+k, JSON.stringify(v)); }catch(e){} }
+};
+
+const $ = id => document.getElementById(id);
+let settings = store.get("settings", {decks: DECKS.map(d=>d.id), dir:"ko", mode:"flip"});
+let queue=[], total=0, correct=0, seen=0, missed=new Map(), current=null, flipped=false, answered=false, lastSet=[];
+
+/* ---------- setup ---------- */
+function renderDecks(){
+  $("decks").innerHTML = DECKS.map(d=>`
+    <label class="deck">
+      <input type="checkbox" value="${d.id}" ${settings.decks.includes(d.id)?"checked":""}>
+      <span class="name">${d.name}</span>
+      <span class="sample">${d.words.slice(0,2).map(w=>w[0]).join(" · ")}</span>
+      <span class="count">${d.words.length}</span>
+    </label>`).join("");
+  $("decks").querySelectorAll("input").forEach(cb=>cb.addEventListener("change", readDecks));
+  updateStart();
+}
+function readDecks(){
+  settings.decks=[...$("decks").querySelectorAll("input:checked")].map(i=>i.value);
+  store.set("settings",settings); updateStart();
+}
+function updateStart(){
+  const n = DECKS.filter(d=>settings.decks.includes(d.id)).reduce((s,d)=>s+d.words.length,0);
+  $("startBtn").disabled = n===0;
+  $("startBtn").textContent = n ? `Start · ${n} cards` : "Pick at least one deck";
+}
+function setupSeg(segId,key){
+  const seg=$(segId);
+  seg.querySelectorAll("button").forEach(b=>{
+    b.classList.toggle("on", b.dataset.v===settings[key]);
+    b.onclick=()=>{ settings[key]=b.dataset.v; store.set("settings",settings);
+      seg.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b)); };
+  });
+}
+$("allBtn").onclick=()=>{ settings.decks=DECKS.map(d=>d.id); store.set("settings",settings); renderDecks(); };
+$("noneBtn").onclick=()=>{ settings.decks=[]; store.set("settings",settings); renderDecks(); };
+
+/* ---------- study ---------- */
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];} return a; }
+function show(id){ ["setup","study","done"].forEach(s=>$(s).hidden = s!==id); $("homeBtn").hidden = id==="setup"; }
+
+function start(cards){
+  lastSet = cards;
+  queue = shuffle(cards.map(c=>({...c, front: settings.dir==="mix" ? (Math.random()<.5?"ko":"en") : settings.dir})));
+  total=queue.length; correct=0; seen=0; missed=new Map();
+  $("flipControls").hidden = settings.mode!=="flip";
+  $("typeControls").hidden = settings.mode!=="type";
+  show("study"); next();
+}
+function startFromDecks(){
+  const cards=[];
+  DECKS.filter(d=>settings.decks.includes(d.id)).forEach(d=>d.words.forEach(([ko,en])=>cards.push({ko,en,deck:d.name})));
+  start(cards);
+}
+
+function next(){
+  if(!queue.length) return finish();
+  current=queue[0]; flipped=false; answered=false;
+  const card=$("card");
+  card.style.transition="none"; card.classList.remove("flipped"); void card.offsetWidth; card.style.transition="";
+  const koFirst = current.front==="ko";
+  $("frontText").innerHTML = koFirst ? `<div class="ko">${current.ko}</div>` : `<div class="en">${current.en}</div>`;
+  $("backText").innerHTML  = koFirst ? `<div class="en">${current.en}</div>` : `<div class="ko">${current.ko}</div>`;
+  $("backSub").innerHTML   = koFirst ? `<span class="k">${current.ko}</span>` : current.en;
+  $("frontTag").textContent = $("backTag").textContent = current.deck;
+  $("speakF").hidden = !koFirst;  // only offer audio on the Korean side up front
+  $("frontHint").textContent = settings.mode==="flip" ? "tap to flip" : "";
+  $("answers").classList.add("hidden");
+  $("typeNext").classList.add("hidden");
+  $("verdict").textContent=""; $("verdict").className="verdict";
+  $("typeInput").value=""; $("typeInput").disabled=false; $("checkBtn").disabled=false;
+  $("typeInput").placeholder = koFirst ? "Type the English meaning…" : "Type it in Korean (한글)…";
+  if(settings.mode==="type") setTimeout(()=>$("typeInput").focus(),50);
+  updateStats();
+}
+function updateStats(){
+  $("bar").style.width = (total? (total-queue.length)/total*100 : 0)+"%";
+  $("left").textContent = `${queue.length} left`;
+  $("score").textContent = seen ? `${correct}/${seen} first try` : "";
+}
+function flip(){
+  if(settings.mode==="type" && !answered) return;
+  flipped=!flipped; $("card").classList.toggle("flipped",flipped);
+  if(flipped && settings.mode==="flip") $("answers").classList.remove("hidden");
+}
+function grade(ok){
+  const c=queue.shift();
+  const key=c.ko+"|"+c.en;
+  if(!c.retry){ seen++; if(ok) correct++; }
+  if(!ok){
+    missed.set(key,{ko:c.ko,en:c.en,deck:c.deck});
+    // put it back a few cards later so you see it again this round
+    const pos=Math.min(queue.length, 3+(Math.random()*3|0));
+    queue.splice(pos,0,{...c,retry:true});
+  }
+  next();
+}
+
+/* type-answer checking */
+function norm(s){ return s.toLowerCase().replace(/\(.*?\)/g,"").replace(/^(to be |to |a |an |the )/,"").replace(/[^a-z가-힣ㄱ-ㆎ]/g,""); }
+function check(e){
+  e.preventDefault(); if(answered) return;
+  const guess=$("typeInput").value.trim(); if(!guess) return;
+  const koFirst=current.front==="ko";
+  const target = koFirst ? current.en : current.ko;
+  const options = target.split(/[\/,]/).map(norm);
+  const ok = options.includes(norm(guess)) || (koFirst && norm(target).length>3 && norm(target).includes(norm(guess)) && norm(guess).length>=norm(target).length-2);
+  answered=true; $("typeInput").disabled=true; $("checkBtn").disabled=true;
+  $("verdict").textContent = ok ? "Correct!" : `Not quite — it's “${target}”`;
+  $("verdict").className = "verdict "+(ok?"ok":"no");
+  flipped=true; $("card").classList.add("flipped");
+  if(!koFirst || ok) speak(current.ko);
+  $("typeNext").classList.remove("hidden");
+  $("tGot").textContent = ok ? "Next →" : "I was right";
+  $("tAgain").textContent = ok ? "Count as wrong" : "Next →";
+  $("tGot").onclick = ()=>grade(true);
+  $("tAgain").onclick = ()=>grade(false);
+  $("tGot").dataset.default = ok ? "1":"0";
+}
+
+function finish(){
+  show("done");
+  const pct = seen? Math.round(correct/seen*100):0;
+  $("doneText").textContent = `${correct} of ${seen} right on the first try (${pct}%).`;
+  const m=[...missed.values()];
+  $("missList").hidden = $("missBtn").hidden = !m.length;
+  $("missList").innerHTML = m.map(w=>`<div><span class="k">${w.ko}</span><span>${w.en}</span></div>`).join("");
+  $("missBtn").onclick=()=>start(m);
+  const hist=store.get("history",[]); hist.push({t:Date.now(),c:correct,n:seen}); store.set("history",hist.slice(-50));
+}
+
+/* pronunciation */
+let koVoice=null;
+function loadVoices(){ try{ koVoice = speechSynthesis.getVoices().find(v=>/^ko/i.test(v.lang)) || null; }catch(e){} }
+try{ loadVoices(); speechSynthesis.onvoiceschanged=loadVoices; }catch(e){}
+function speak(text){
+  try{
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text); u.lang="ko-KR"; u.rate=.85; if(koVoice) u.voice=koVoice;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+["speakF","speakB"].forEach(id=>{ $(id).innerHTML=SPEAKER; $(id).onclick=e=>{ e.stopPropagation(); speak(current.ko); }; });
+
+/* events */
+$("card").onclick=flip;
+$("againBtn").onclick=e=>{e.stopPropagation(); grade(false);};
+$("gotBtn").onclick=e=>{e.stopPropagation(); grade(true);};
+$("typeForm").onsubmit=check;
+$("startBtn").onclick=startFromDecks;
+$("restartBtn").onclick=()=>start(lastSet);
+$("backBtn").onclick=$("homeBtn").onclick=()=>{ show("setup"); renderDecks(); };
+document.addEventListener("keydown",e=>{
+  if($("study").hidden) return;
+  if(settings.mode==="flip"){
+    if(e.code==="Space"||e.key==="Enter"){ e.preventDefault(); flip(); }
+    else if(flipped && (e.key==="ArrowRight"||e.key==="2")) grade(true);
+    else if(flipped && (e.key==="ArrowLeft"||e.key==="1")) grade(false);
+  } else if(answered && e.key==="Enter"){ e.preventDefault(); grade($("tGot").dataset.default==="1"); }
+});
+
+setupSeg("dirSeg","dir"); setupSeg("modeSeg","mode"); renderDecks(); show("setup");
+</script>
+</body>
+</html>
